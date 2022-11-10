@@ -1,0 +1,21 @@
+	Sentence #	Word	POS	Tag
+0	1.0	Thousands	NNS	O
+1	1.0	of	IN	O
+2	1.0	demonstrators	NNS	O
+3	1.0	have	VBP	O
+4	1.0	marched	VBN	O
+5	1.0	through	IN	O
+6	1.0	London	NNP	B-geo
+7	1.0	to	TO	O
+8	1.0	protest	VB	O
+9	1.0	the	DT	O
+10	1.0	war	NN	O
+11	1.0	in	IN	O
+12	1.0	Iraq	NNP	B-geo
+13	1.0	and	CC	O
+14	1.0	demand	VB	O
+15	1.0	the	DT	O
+16	1.0	withdrawal	NN	O
+17	1.0	of	IN	O
+18	1.0	British	JJ	B-gpe
+19	1.0	troops	NNS	O
