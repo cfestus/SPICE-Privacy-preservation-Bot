@@ -14,9 +14,9 @@ nlp = spacy.load("en_core_web_sm")
 
 
 def funcCheckUserRequest():
-    url = "https://api2.mksmart.org/changes/0a3b44d1-bfa6-45a5-ac02-0c0a3a30e8c2"
+    url = "xxxxx"
     headers = {
-        'Authorization': 'Basic M2JjMzdkMTEtMjAyZi00OGM4LWJhMDEtYmIxYjNmOTIzNjE5OjNiYzM3ZDExLTIwMmYtNDhjOC1iYTAxLWJiMWIzZjkyMzYxOQ=='
+        'Authorization': 'xxxxxx'
     }
     response = requests.request("GET", url, headers=headers)
     if response.status_code == 200:
