@@ -3,8 +3,8 @@ from requests.auth import HTTPBasicAuth
 import json
 
 baseUrl = 'https://api2.pp.mksmart.org/browse/'
-alDataset = 'spice__activity_log'
-alDatasetKey = 'activitylog_readkey'
+alDataset = '****'
+alDatasetKey = '****'
 pagesize = 20
 page = 1
 initialTimestamp = str(1667306718)   # 1st November 2022
