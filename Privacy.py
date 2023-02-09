@@ -29,9 +29,11 @@ class Privacy(Scanner):
         regex_twitter = r"(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z]+[A-Za-z0-9]+)"
         regex_ips = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
         pii = {}
-
-        if re.match(regex_email, value):
-            pii['EMAIL'] = value
+        
+        find_email = re.findall(regex_email, value)
+        if find_email:
+            pii['EMAIL'] = find_email
+        
         if re.match(regex_zip, value):
             pii['ZIP'] = value
         if re.match(regex_phone, value):
@@ -42,11 +44,12 @@ class Privacy(Scanner):
             pii['TWITTER'] = value
         if re.match(regex_ips, value):
             pii['IPS'] = value
-        if len(pii) == 0:
-            doc = nlp(value)
-            for ent in doc.ents:
-                if ent.label_ in ["PERSON", "ORG", "GPE", "LOC", "DATE"]:
-                    pii[ent.label_] = ent.text
+        
+        #if len(pii) == 0:
+        doc = nlp(value)
+        for ent in doc.ents:
+            if ent.label_ in ["PERSON", "ORG", "GPE", "LOC", "DATE"]:
+                pii[ent.label_] = ent.text
         if len(pii) == 0:
             return {"code": 400}
         else:
@@ -60,6 +63,7 @@ class Privacy(Scanner):
         low = 1
         ascore = 0
         ascoreName = ''
+        # XXX maybe we should load the model outside the method call
         nlp = spacy.load("en_core_web_sm")
         alart_name = ['Low', 'Medium', 'High', 'Extreme']
         assigned_value = {
@@ -85,12 +89,13 @@ class Privacy(Scanner):
         }
         # nlp = en_core_web_sm.load()
         flatObject = super().flattenObject(docObject)
+        # print('flatten object: ', flatObject)
         # entity_to_check = ['NAME', 'ADDRESS', 'CITY', 'STATE', 'PERSON', 'ORG', 'COUNTRY', 'ZIP', 'PHONE', 'EMAIL', 'AGE', 'STREETADDRESS', 'POSTCODE', 'GPE', 'DATE', 'IPS']
         for key in flatObject:
             # if key.upper() in entity_to_check:
             valueToCheckPii = flatObject[key]
-            # print(valueToCheckPii)
             values = self.__valueToCheckPii(str(valueToCheckPii), nlp, key)
+            print(key, values)
             # print(values)
             if (values["code"] == 200):
                 for index in values["data"]:
@@ -103,7 +108,11 @@ class Privacy(Scanner):
 
                     items.append(self.__buildNotification(
                         key.upper(), valueToCheckPii, index, values["data"][index], ascore, ascoreName))
-            # print(items)
+        
+        # If the method does not catch any PII, return an empty list
+        if not items:
+            return []
+        
         total_alert_score = 0
         severityScores = ''
         for item in items:
@@ -122,7 +131,7 @@ class Privacy(Scanner):
         return [{
             "job-type": "PRIVACY-VIOLATION",
             "Date": current_date.strftime("%m/%d/%Y"),
-            "TimeStam": int(time.time()),
+            "TimeStamp": int(time.time()),
             "Document ID": documentID,
             "Status": "ALERT",
             "SeverityScores": severityScores,
