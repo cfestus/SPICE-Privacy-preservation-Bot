@@ -7,6 +7,8 @@ import datetime
 import re
 import en_core_web_sm
 
+nlp = spacy.load("en_core_web_sm")
+
 
 class Privacy(Scanner):
     def __buildNotification(self, fieldName, fieldValue, piiType, piiValue, alertScore, ascoreName):
@@ -28,24 +30,47 @@ class Privacy(Scanner):
         regex_creditcard = r"(?:\d[ -]*?){13,16}"
         regex_twitter = r"(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z]+[A-Za-z0-9]+)"
         regex_ips = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
+        regex_age = r"born on \d{2}/\d{2}/\d{4}"
+        regex_postcode = r"\b([A-Z]{1,2}\d[A-Z]|[A-Z]{1,2}\d{1,2})\ +\d[A-Z-[CIKMOV]]{2}\b"
+        regex_street_address = r"\d+\s+[A-Za-z]+\s+[A-Za-z]+"
+        regex_address = r"\d+\s+[A-Za-z]+\s+[A-Za-z]+,[\sA-Za-z]+,\s[A-Za-z]+\s\d+"
+
         pii = {}
-        
+
         find_email = re.findall(regex_email, value)
         if find_email:
             pii['EMAIL'] = find_email
-        
-        if re.match(regex_zip, value):
-            pii['ZIP'] = value
-        if re.match(regex_phone, value):
-            pii['PHONE'] = value
-        if re.match(regex_creditcard, value):
-            pii['CREDITCARD'] = value
-        if re.match(regex_twitter, value):
-            pii['TWITTER'] = value
-        if re.match(regex_ips, value):
-            pii['IPS'] = value
-        
-        #if len(pii) == 0:
+        find_zip = re.findall(regex_zip, value)
+        if find_zip:
+            pii['ZIP'] = find_zip
+        find_phone = re.findall(regex_phone, value)
+        if find_phone:
+            pii['PHONE'] = find_phone
+        find_creditcard = re.findall(regex_creditcard, value)
+        if find_creditcard:
+            pii['CREDITCARD'] = find_creditcard
+        find_twitter = re.findall(regex_twitter, value)
+        if find_twitter:
+            pii['TWITTER'] = find_twitter
+        find_ips = re.findall(regex_ips, value)
+        if find_ips:
+            pii['IPS'] = find_ips
+        find_age = re.findall(regex_age, value)
+        if find_age:
+            birthdate = find_age.group().split(" ")[-1]
+            age = calculate_age(birthdate)
+            pii['AGE'] = find_age
+        find_postcode = re.findall(regex_postcode, value)
+        if find_postcode:
+            pii['POSTCODE'] = find_postcode
+        find_street_address = re.findall(regex_street_address, value)
+        if find_street_address:
+            pii['STREETADDRESS'] = find_street_address
+        find_address = re.findall(regex_address, value)
+        if find_address:
+            pii['ADDRESS'] = find_address
+
+        # if len(pii) == 0:
         doc = nlp(value)
         for ent in doc.ents:
             if ent.label_ in ["PERSON", "ORG", "GPE", "LOC", "DATE"]:
@@ -57,14 +82,13 @@ class Privacy(Scanner):
 
     def scanObject(self, datasetID, documentID, docObject):
         items = []
-        extreme = 4
-        high = 3
-        medium = 2
-        low = 1
+        EXTREME = 4
+        HIGH = 3
+        MEDIUM = 2
+        LOW = 1
         ascore = 0
         ascoreName = ''
-        # XXX maybe we should load the model outside the method call
-        nlp = spacy.load("en_core_web_sm")
+
         alart_name = ['Low', 'Medium', 'High', 'Extreme']
         assigned_value = {
             "PERSON": 4,
@@ -87,15 +111,15 @@ class Privacy(Scanner):
             "AGE": 2,
 
         }
-        # nlp = en_core_web_sm.load()
+        # flatten the docObject
         flatObject = super().flattenObject(docObject)
         # print('flatten object: ', flatObject)
-        # entity_to_check = ['NAME', 'ADDRESS', 'CITY', 'STATE', 'PERSON', 'ORG', 'COUNTRY', 'ZIP', 'PHONE', 'EMAIL', 'AGE', 'STREETADDRESS', 'POSTCODE', 'GPE', 'DATE', 'IPS']
+
         for key in flatObject:
             # if key.upper() in entity_to_check:
             valueToCheckPii = flatObject[key]
             values = self.__valueToCheckPii(str(valueToCheckPii), nlp, key)
-            print(key, values)
+            #print(key, values)
             # print(values)
             if (values["code"] == 200):
                 for index in values["data"]:
@@ -108,23 +132,23 @@ class Privacy(Scanner):
 
                     items.append(self.__buildNotification(
                         key.upper(), valueToCheckPii, index, values["data"][index], ascore, ascoreName))
-        
+
         # If the method does not catch any PII, return an empty list
         if not items:
             return []
-        
+
         total_alert_score = 0
         severityScores = ''
         for item in items:
             total_alert_score += item['Alert Score']
             if total_alert_score >= 4:
-                severityScores = "extreme"
+                severityScores = "EXTREME"
             elif total_alert_score == 3:
-                severityScores = "high"
+                severityScores = "HIGH"
             elif total_alert_score == 2:
-                severityScores = "medium"
+                severityScores = "MEDIUM"
             else:
-                severityScores = "low"
+                severityScores = "LOW"
 
       # Get the current date
         current_date = datetime.datetime.now().date()
