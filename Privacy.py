@@ -26,14 +26,16 @@ class Privacy(Scanner):
     def __valueToCheckPii(self, value, nlp, key):
         regex_email = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
         regex_zip = r"\b\d{5}(?:-\d{4})?\b"
-        regex_phone = r"(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4})"
-        regex_creditcard = r"(?:\d[ -]*?){13,16}"
-        regex_twitter = r"(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z]+[A-Za-z0-9]+)"
+        regex_phone = r"^(?!(\d{16}|\d{4}[\s-]\d{4}[\s-]\d{4}[\s-]\d{4}))(\+\d{1,2}[\s-]?)?(\(\d{3}\)|\d{3})[\s-]?(\d{3})[\s-]?(\d{4})(\s*|[\s-]\d{4})*$"
+        regex_visacard = r"\b(4\d{3}[\s]\d{4}[\s]\d{4}[\s]\d{4}|4\d{3}[-]\d{4}[-]\d{4}[-]\d{4}|4\d{3}[.]\d{4}[.]\d{4}[.]\d{4}|4\d{3}\d{4}\d{4}\d{4})\b"
+        regex_mastercard = r"\b(5[1-5][0-9]{2}[-\s]?[0-9]{4}[-\s]?[0-9]{4}[-\s]?[0-9]{4}|22[23][0-9]{12})\b"
+        regex_socialmedia = r"(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z]+[A-Za-z0-9]+)"
         regex_ips = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
-        regex_age = r"born on \d{2}/\d{2}/\d{4}"
-        regex_postcode = r"\b([A-Z]{1,2}\d[A-Z]|[A-Z]{1,2}\d{1,2})\ +\d[A-Z-[CIKMOV]]{2}\b"
+        regex_postcode = r"\b([A-Z]{1,2}\d{1,2})\s*(\d[A-Z]{2})\b"
         regex_street_address = r"\d+\s+[A-Za-z]+\s+[A-Za-z]+"
         regex_address = r"\d+\s+[A-Za-z]+\s+[A-Za-z]+,[\sA-Za-z]+,\s[A-Za-z]+\s\d+"
+        regex_date = r"\b\d{2}/\d{2}/\d{4}\b"
+        regex_dob = r"\b(born on|Date of birth)\b (\d{2}/\d{2}/\d{4}|\w+ \d{1,2}(st|nd|rd|th), \d{4})"
 
         pii = {}
 
@@ -46,20 +48,18 @@ class Privacy(Scanner):
         find_phone = re.findall(regex_phone, value)
         if find_phone:
             pii['PHONE'] = find_phone
-        find_creditcard = re.findall(regex_creditcard, value)
-        if find_creditcard:
-            pii['CREDITCARD'] = find_creditcard
-        find_twitter = re.findall(regex_twitter, value)
-        if find_twitter:
-            pii['TWITTER'] = find_twitter
+        find_visacard = re.findall(regex_visacard, value)
+        if find_visacard:
+            pii['VISACARD'] = find_visacard
+        find_mastercard = re.findall(regex_mastercard, value)
+        if find_mastercard:
+            pii['MASTERCARD'] = find_mastercard
+        find_socialmedia = re.findall(regex_socialmedia, value)
+        if find_socialmedia:
+            pii['SOCIALMEDIA'] = find_socialmedia
         find_ips = re.findall(regex_ips, value)
         if find_ips:
             pii['IPS'] = find_ips
-        find_age = re.findall(regex_age, value)
-        if find_age:
-            birthdate = find_age.group().split(" ")[-1]
-            age = calculate_age(birthdate)
-            pii['AGE'] = find_age
         find_postcode = re.findall(regex_postcode, value)
         if find_postcode:
             pii['POSTCODE'] = find_postcode
@@ -69,11 +69,17 @@ class Privacy(Scanner):
         find_address = re.findall(regex_address, value)
         if find_address:
             pii['ADDRESS'] = find_address
+        find_date = re.findall(regex_date, value)
+        if find_date:
+            pii['DATE'] = find_date
+        find_dob = re.findall(regex_dob, value)
+        if find_dob:
+            pii['DATE OF BIRTH'] = find_dob
 
         # if len(pii) == 0:
         doc = nlp(value)
         for ent in doc.ents:
-            if ent.label_ in ["PERSON", "ORG", "GPE", "LOC", "DATE"]:
+            if ent.label_ in ["PERSON", "ORG", "GPE", "LOC"]:
                 pii[ent.label_] = ent.text
         if len(pii) == 0:
             return {"code": 400}
@@ -98,7 +104,7 @@ class Privacy(Scanner):
             "ORG": 2,
             "GPE": 1,
             "LOC": 1,
-            "CREDITCARD": 4,
+            "VISACARD": 4,
             "PHONE": 4,
             "EMAIL": 4,
             "STREETADDRESS": 3,
@@ -109,6 +115,9 @@ class Privacy(Scanner):
             "POSTCODE": 2,
             "IPS": 2,
             "AGE": 2,
+            "MASTERCARD": 4,
+            "SOCIALMEDIA": 3,
+            'DATE OF BIRTH': 2,
 
         }
         # flatten the docObject
@@ -116,7 +125,7 @@ class Privacy(Scanner):
         # print('flatten object: ', flatObject)
 
         for key in flatObject:
-            # if key.upper() in entity_to_check:
+
             valueToCheckPii = flatObject[key]
             values = self.__valueToCheckPii(str(valueToCheckPii), nlp, key)
             #print(key, values)
@@ -151,6 +160,7 @@ class Privacy(Scanner):
                 severityScores = "LOW"
 
       # Get the current date
+
         current_date = datetime.datetime.now().date()
         return [{
             "job-type": "PRIVACY-VIOLATION",
