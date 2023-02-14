@@ -17,7 +17,7 @@ class Privacy(Scanner):
             "Value": fieldValue,
             "PII Type": piiType,
             "PII Detected Value": piiValue,
-            "PII Descriptiom": piiType+' was decteted',
+            "PII Description": piiType+' was detected',
             "Alert Score": alertScore,
             "Alert Name": ascoreName,
         }
@@ -32,10 +32,11 @@ class Privacy(Scanner):
         regex_socialmedia = r"(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z]+[A-Za-z0-9]+)"
         regex_ips = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
         regex_postcode = r"\b([A-Z]{1,2}\d{1,2})\s*(\d[A-Z]{2})\b"
-        regex_street_address = r"\d+\s+[A-Za-z]+\s+[A-Za-z]+"
-        regex_address = r"\d+\s+[A-Za-z]+\s+[A-Za-z]+,[\sA-Za-z]+,\s[A-Za-z]+\s\d+"
-        regex_date = r"\b\d{2}/\d{2}/\d{4}\b"
+        regex_street_address = r"\b(?!\d{4}\b)(?!\d{5,}\b)(?!\d{4}\sby\sand\b)\d+\s+[A-Za-z]+\s+[A-Za-z]+\b"
+        regex_address = r"\b([\w\s]+),\s([\d\w\s]+),\s([A-Z]{2})\s(\d{5})\b"
+        regex_date = r"\b((\d{1,2}(st|nd|rd|th)\sday\s?of\s[A-Za-z]+\s?,?\s?\d{4})|(January|February|March|April|May|June|July|August|September|October|November|December)\s\d{1,2},?\s?\d{4}|\d{1,2}/\d{1,2}/\d{4}|[A-Za-z]+\s\d{1,2}( \d{4})?)\b"
         regex_dob = r"\b(born on|Date of birth)\b (\d{2}/\d{2}/\d{4}|\w+ \d{1,2}(st|nd|rd|th), \d{4})"
+        regex_age = r"\b(\d{1,2}\syears|age\s?of\s?\d{1,2})\b"
 
         pii = {}
 
@@ -75,6 +76,9 @@ class Privacy(Scanner):
         find_dob = re.findall(regex_dob, value)
         if find_dob:
             pii['DATE OF BIRTH'] = find_dob
+        find_age = re.findall(regex_age, value)
+        if find_age:
+            pii['AGE'] = find_age
 
         # if len(pii) == 0:
         doc = nlp(value)
@@ -163,12 +167,13 @@ class Privacy(Scanner):
 
         current_date = datetime.datetime.now().date()
         return [{
-            "job-type": "PRIVACY-VIOLATION",
+            "Job-type": "PRIVACY-VIOLATION",
             "Date": current_date.strftime("%m/%d/%Y"),
-            "TimeStamp": int(time.time()),
+            "Timestamp": int(time.time()),
+            "Dataset ID": datasetID,
             "Document ID": documentID,
             "Status": "ALERT",
             "SeverityScores": severityScores,
-            "Description": 'Personal identifiable information was decteted in this document',
+            "Description": 'Personally identifiable information was detected in this document',
             'Fields': items
         }]
