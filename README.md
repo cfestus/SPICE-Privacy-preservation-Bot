@@ -41,3 +41,9 @@ be changed depending on the type of scanning being done. For example,
 privacy scanning will likely scan through all key/value pairs and combine 
 any positive results into a single notification that details these matches 
 and includes an overall severity score.
+
+## Citation
+
+This work is part of a component published in the following paper. If you use any part of the annotated dataset or code in your research or projects, please cite our paper:
+
+Carvalho J, Daga E, Mulholland P, Asprino L, Uwasomba C, Daquino M, Gangemi A, Maguire M, Stoneman A. (2024). Integrating Citizen Experiences in Cultural Heritage Archives with a Linked Non-Open Data Hub. ACM Journal on Computing and Cultural Heritage. 17(4):1-39. https://doi.org/10.1145/3706063
